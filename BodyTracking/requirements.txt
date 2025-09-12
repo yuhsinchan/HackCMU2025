@@ -1,0 +1,27 @@
+# Requirements for Body Tracking Data Collector
+# 
+# Core dependencies for data collection and analysis
+
+# Computer Vision and Image Processing
+opencv-python>=4.5.0
+
+# Numerical Computing
+numpy>=1.20.0
+
+# Data Analysis (for examples and data processing)
+pandas>=1.3.0
+
+# Visualization dependencies
+matplotlib>=3.3.0
+seaborn>=0.11.0
+
+# ZED SDK Python bindings (install separately from ZED SDK)
+# pyzed (comes with ZED SDK installation)
+
+# OpenGL dependencies (usually included with system)
+# PyOpenGL>=3.1.0
+# PyOpenGL-accelerate>=3.1.0
+
+# Optional: For advanced data analysis
+# scipy>=1.7.0
+# scikit-learn>=1.0.0
