@@ -8,10 +8,11 @@ function App() {
   const [error, setError] = useState(null)
   const [lastFrameTime, setLastFrameTime] = useState(null)
   const [connectionQuality, setConnectionQuality] = useState('checking')
-  const [counter, setCounter] = useState(-1)
+  const [counter, setCounter] = useState(0)
   const [pred, setPred] = useState(-1)
   const imgRef = useRef(null)
   const currentAudioRef = useRef(null)
+  const lastCounterRef = useRef(-1)
   const lastPredRef = useRef(-1)
 
   // Audio mapping function
@@ -28,28 +29,10 @@ function App() {
 
   // Handle audio playback
   const playAudio = (prediction) => {
-    if (prediction === -1) {
-      console.log('Skipping audio for initial state')
-      return
-    }
+    if (prediction === -1) return
     
     const audioFile = getAudioFile(prediction)
-    console.log('Attempting to play audio:', audioFile)
-    if (!audioFile) {
-      console.log('No audio file found for prediction:', prediction)
-      return
-    }
-
-    // If it's the same prediction and audio is still playing, don't play again
-    if (prediction === lastPredRef.current && currentAudioRef.current) {
-      const isPlaying = !currentAudioRef.current.paused && 
-                       !currentAudioRef.current.ended && 
-                       currentAudioRef.current.currentTime > 0
-      if (isPlaying) {
-        console.log('Same prediction and audio still playing, skipping')
-        return
-      }
-    }
+    if (!audioFile) return
 
     // Stop any current audio before playing new one
     if (currentAudioRef.current) {
@@ -58,26 +41,9 @@ function App() {
     }
 
     // Create and play new audio
-    console.log('Creating new audio for file:', audioFile)
     const audio = new Audio(audioFile)
-    
-    // Add event listeners for debugging
-    audio.addEventListener('playing', () => {
-      console.log('Audio started playing:', audioFile)
-    })
-    audio.addEventListener('error', (e) => {
-      console.error('Audio error:', e)
-    })
-    audio.addEventListener('ended', () => {
-      console.log('Audio finished playing:', audioFile)
-    })
-
-    audio.play()
-      .then(() => console.log('Audio play promise resolved'))
-      .catch(e => console.error('Error playing audio:', e, audioFile))
-    
+    audio.play().catch(e => console.error('Error playing audio:', e))
     currentAudioRef.current = audio
-    lastPredRef.current = prediction
   }
 
   // Mapping function to convert prediction numbers to feedback messages
@@ -160,12 +126,18 @@ function App() {
           } else {
             console.warn('Frame message missing image data')
           }
-        } else if (msg.type === 'counter') {
-          console.log('Received counter update:', msg.count)
-          console.log('Received prediction update:', msg.prediction)
-          setCounter(msg.count)
-          setPred(msg.prediction)
-          playAudio(msg.prediction)
+                } else if (msg.type === 'counter') {
+          const newCount = msg.count
+          const newPred = msg.prediction
+          // Only play audio when counter changes (new rep)
+          if (newCount !== lastCounterRef.current) {
+            playAudio(newPred)
+            lastCounterRef.current = newCount
+          }
+          if (newPred !== -1) {
+            setCounter(newCount)
+            setPred(newPred)
+          }
         }
       } catch (e) {
         console.error('Error processing message:', e)
