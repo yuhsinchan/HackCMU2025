@@ -8,7 +8,7 @@ function LandingPage({ onStart }) {
       <div style={{ width: '100%', maxWidth: 960 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <h1 style={{ margin: 0, fontSize: '3rem', letterSpacing: 0.5 }}>
-            <span style={{ color: '#00FF95' }}>Gymaster</span>
+            <span style={{ color: '#00FF95' }}>RepCheck</span>
             <span style={{ color: '#e5e7eb' }}> – Your AI Form Coach</span>
           </h1>
           <p style={{ marginTop: 8, color: '#9ca3af', fontSize: '1.1rem' }}>

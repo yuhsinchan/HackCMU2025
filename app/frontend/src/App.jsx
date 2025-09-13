@@ -131,7 +131,7 @@ function App() {
         <div style={{ minHeight: '100vh', background: '#0b0f12', color: '#e5e7eb', padding: 16 }}>
           <div style={{ maxWidth: 1280, margin: '0 auto' }}>
             <div style={{ marginBottom: 24, textAlign: 'center' }}>
-              <h1 style={{ margin: 0, fontSize: '2.5rem', color: '#00FF95' }}>Gymaster</h1>
+              <h1 style={{ margin: 0, fontSize: '2.5rem', color: '#00FF95' }}>RepCheck</h1>
               <p style={{ margin: '8px 0 0', color: '#9ca3af' }}>Real-time exercise form analysis and feedback</p>
             </div>
             
