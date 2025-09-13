@@ -101,6 +101,7 @@ def main():
         for r in runs:
             if "data" not in r:
                 raise ValueError(f"{fpath} missing key 'data'.")
+            ts = [s['ts'] for s in r["data"]]
             seq = np.array([s['keypoints_3d'] for s in r["data"]])
             if seq.ndim != 3 or seq.shape[1] != 34:
                 raise ValueError(f"Bad seq shape {seq.shape}, expected (T,34,3).")
@@ -109,9 +110,14 @@ def main():
 
             seq_c = canonicalize_body34(seq)
             run_out = {}
-            run_out["label"] = r["label"]
+            if type(r["label"]) == list:
+                if sum(r["label"]) == 0:
+                    label = 0
+                else:
+                  label = int(np.array(r["label"]).argmax() + 1)
+            run_out["label"] = label
+            run_out["data"] = [{"ts": t, "keypoints_3d": s} for t, s in zip(ts, seq_c.tolist())]
 
-            run_out["seq"] = seq_c.tolist()
             save_run(run_out, out_dir, idx)
             idx += 1; kept += 1
 
