@@ -6,6 +6,7 @@ Usage: python app.py
 from flask import Flask, request, jsonify
 import os
 from web_predictor import initialize_service, predict_file
+from audio_player import play_audio
 
 app = Flask(__name__)
 
@@ -45,7 +46,7 @@ def predict():
         
         # Make prediction
         results = predict_file(filename)
-        
+        play_audio(results[0]['prediction'])
         return jsonify({
             'file': filename,
             'results': results
