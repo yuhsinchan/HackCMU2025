@@ -1,4 +1,8 @@
+import json, os, argparse
+from pathlib import Path
 import numpy as np
+import pdb
+
 
 # BODY_34 indices (per your map)
 PELVIS, U_BACK, NECK = 0, 2, 3
@@ -58,57 +62,60 @@ def canonicalize_body34(X):
     feet_z = np.stack([Xc[:, L_TOE, 2], Xc[:, R_TOE, 2], Xc[:, L_HEEL, 2], Xc[:, R_HEEL, 2]], axis=-1)
     ground = np.min(feet_z, axis=-1)                     # (T,)
     Xc[:, :, 2] -= ground[:, None]                       # shift z so ground→0
+    # meta = {"R": R, "t": t, "scale": scale, "ground": ground}
+    return Xc
 
-    meta = {"R": R, "t": t, "scale": scale, "ground": ground}
-    return Xc, meta
+# ---------- IO ----------
+def load_runs(path: Path):
+    with open(path, "r") as f:
+        data = json.load(f)
+    runs = data["runs"] if isinstance(data, dict) and "runs" in data else data
+    if not isinstance(runs, list):
+        raise ValueError("Input JSON must be a list of runs or a dict with key 'runs'.")
+    return runs
 
+def save_run(run, out_dir: Path, idx: int, zpad: int = 5):
+    out = out_dir / f"run_{str(idx).zfill(zpad)}.json"
+    with open(out, "w") as f:
+        json.dump(run, f, separators=(",", ":"))
+    return out
 
+# ---------- Main ----------
+def main():
+    p = argparse.ArgumentParser(description="Split multi-run JSON files from a directory and canonicalize BODY_34 keypoints.")
+    p.add_argument("--input_dir", required=True, help="Directory containing input .json files")
+    p.add_argument("--outdir", required=True, help="Output directory for per-run .json files")
+    p.add_argument("--start_idx", type=int, default=0)
+    p.add_argument("--min_frames", type=int, default=9)
+    args = p.parse_args()
 
-# # preprocess.py
-# import numpy as np
+    in_dir = Path(args.input_dir)
+    out_dir = Path(args.outdir); out_dir.mkdir(parents=True, exist_ok=True)
 
-# BONES = [(2,5),(9,12),(2,9),(5,12),(0,1),(1,2)]  # adapt to your skeleton
+    files = sorted(in_dir.glob("*.json"))
+    idx = args.start_idx
+    kept = 0
 
-# def canonicalize(X):  # X: (T,J,3)
-#     pelvis = X[:,8:9,:]
-#     X = X - pelvis
-#     # scale by mean bone length
-#     bl = []
-#     for a,b in BONES: bl.append(np.linalg.norm(X[:,a]-X[:,b], axis=-1))
-#     scale = np.maximum(np.mean(bl), 1e-6)
-#     X = X / scale
-#     # yaw align: rotate around vertical so shoulders lie on x-axis
-#     sh_l, sh_r = X[:,2], X[:,5]
-#     v = sh_r - sh_l
-#     yaw = -np.arctan2(v[:,1], v[:,0])  # around z
-#     cz, sz = np.cos(yaw), np.sin(yaw)
-#     Rz = np.stack([np.stack([cz,-sz,np.zeros_like(cz)],-1),
-#                    np.stack([sz, cz,np.zeros_like(cz)],-1),
-#                    np.stack([np.zeros_like(cz),np.zeros_like(cz),np.ones_like(cz)],-1)], -2)  # (T,3,3)
-#     X = np.einsum('tij,tbj->tbi', Rz, X)
-#     return X
+    for fpath in files:
+        runs = load_runs(fpath)
+        for r in runs:
+            if "data" not in r:
+                raise ValueError(f"{fpath} missing key 'data'.")
+            seq = np.array([s['keypoints_3d'] for s in r["data"]])
+            if seq.ndim != 3 or seq.shape[1] != 34:
+                raise ValueError(f"Bad seq shape {seq.shape}, expected (T,34,3).")
+            if seq.shape[0] < args.min_frames:
+                continue
 
-# def resample_clip(X, T=64):
-#     t_orig = np.linspace(0,1,len(X))
-#     t_new  = np.linspace(0,1,T)
-#     Xr = np.stack([np.interp(t_new, t_orig, X[...,k]) for k in range(3)], axis=-1)  # wrong shape if used directly
-#     # do per-joint
-#     out = []
-#     for j in range(X.shape[1]):
-#         out.append(np.column_stack([np.interp(t_new,t_orig,X[:,j,k]) for k in range(3)]))
-#     return np.stack(out, axis=1)  # (T,J,3)
+            seq_c = canonicalize_body34(seq)
+            run_out = {}
+            run_out["label"] = r["label"]
 
-# def make_features(X):  # X: (T,J,3)
-#     V = np.gradient(X, axis=0)          # velocities
-#     # simple angles: knee L/R example
-#     def angle(a,b,c):
-#         v1=a-b; v2=c-b
-#         cos=(v1*v2).sum(-1)/(np.linalg.norm(v1,axis=-1)*np.linalg.norm(v2,axis=-1)+1e-6)
-#         return np.arccos(np.clip(cos,-1,1))
-#     Lk = angle(X[:,12], X[:,13], X[:,14])  # adjust indices
-#     Rk = angle(X[:,9],  X[:,10], X[:,11])
-#     feats = np.concatenate([X.reshape(len(X),-1),
-#                             V.reshape(len(V),-1),
-#                             Lk[:,None], Rk[:,None],
-#                             (Lk-Rk)[:,None]], axis=1)
-#     return feats.astype(np.float32)  # (T,D)
+            run_out["seq"] = seq_c.tolist()
+            save_run(run_out, out_dir, idx)
+            idx += 1; kept += 1
+
+    print(f"wrote {kept} runs to {out_dir.resolve()}")
+
+if __name__ == "__main__":
+    main()
