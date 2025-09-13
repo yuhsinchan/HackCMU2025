@@ -5,6 +5,7 @@ Simple and clean training pipeline
 
 import torch
 from model import PoseValidationTCN
+from model2 import RepMistakeNet
 from data_utils import create_data_loaders, get_input_size
 from trainer import Trainer
 from utils import plot_training_history, plot_confusion_matrix, print_evaluation_report, count_parameters, set_random_seeds
@@ -18,7 +19,7 @@ def main():
         'data_path': '../Dataset/merged_data.json',
         'sequence_length': 9,
         'batch_size': 1,
-        'num_epochs': 50,
+        'num_epochs': 20,
         'learning_rate': 0.001,
         'hidden_channels': [64, 128],
         'kernel_size': 3,
@@ -51,13 +52,18 @@ def main():
     print(f"  Test: {len(test_loader.dataset)}")
     
     # Create model
-    model = PoseValidationTCN(
-        input_size=input_size,
-        hidden_channels=CONFIG['hidden_channels'],
-        kernel_size=CONFIG['kernel_size'],
-        dropout=CONFIG['dropout'],
-        num_classes=7  # 0=correct, 1-6=incorrect types
+    model = RepMistakeNet(
+          num_inputs=34*3+1,
+          num_classes=7,
+          causal=False
     )
+    # model = PoseValidationTCN(
+    #     input_size=input_size,
+    #     hidden_channels=CONFIG['hidden_channels'],
+    #     kernel_size=CONFIG['kernel_size'],
+    #     dropout=CONFIG['dropout'],
+    #     num_classes=7  # 0=correct, 1-6=incorrect types
+    # )
     
     print(f"\nModel created:")
     count_parameters(model)
@@ -89,7 +95,7 @@ def main():
     plot_confusion_matrix(targets, predictions)
     
     # Save model
-    model_path = 'pose_validation_model.pth'
+    model_path = 'tcn_non_causal.pth'
     trainer.save_model(model_path)
     
     print(f"\nTraining completed!")
