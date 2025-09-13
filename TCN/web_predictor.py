@@ -7,7 +7,7 @@ import json
 import torch
 import numpy as np
 from model import PoseValidationTCN
-
+from model2 import RepMistakeNet
 
 class PredictionService:
     """Simple prediction service that loads model once"""
@@ -37,7 +37,12 @@ class PredictionService:
                 }
             
             # Create and load model
-            self.model = PoseValidationTCN(**config)
+            # self.model = PoseValidationTCN(**config)
+            self.model = RepMistakeNet(
+                num_inputs=34 * 3 + 1,
+                num_classes=5,
+                causal=False,
+            )
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.model.to(self.device)
             self.model.eval()
@@ -88,7 +93,7 @@ class PredictionService:
         except Exception as e:
             raise Exception(f"Failed to process JSON file: {e}")
     
-    def predict_sequence(self, keypoints_3d, timestamps, sequence_length=10):
+    def predict_sequence(self, keypoints_3d, timestamps, sequence_length=6):
         """Predict on a single sequence"""
         try:
             if len(keypoints_3d) < sequence_length:
