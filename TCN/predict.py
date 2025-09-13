@@ -8,7 +8,7 @@ import json
 from model import PoseValidationTCN
 from trainer import Trainer
 from utils import PosePredictor
-
+import time
 
 def load_trained_model(model_path):
     """Load a trained model from file"""
@@ -91,6 +91,18 @@ def predict_from_file(model_path, data_path):
             data = json.load(f)
     except Exception as e:
         print(f"Error loading data: {e}")
+        return
+    
+    # Handle both single sample and list of samples
+    if isinstance(data, dict) and 'data' in data:
+        # Single sample format: {"data": [...]}
+        data = [data]  # Convert to list
+        print("Detected single sample format")
+    elif isinstance(data, list):
+        # List of samples format: [{"data": [...]}, {"data": [...]}]
+        print("Detected list of samples format")
+    else:
+        print("Error: Unrecognized data format")
         return
     
     # Create predictor

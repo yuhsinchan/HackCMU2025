@@ -90,7 +90,7 @@ class PosePredictor:
         self.model.to(self.device)
         self.model.eval()
     
-    def predict_sequence(self, keypoints_3d, timestamps, sequence_length=30):
+    def predict_sequence(self, keypoints_3d, timestamps, sequence_length=10):
         """
         Predict on a single sequence of keypoints
         
