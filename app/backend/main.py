@@ -7,6 +7,13 @@ import cv2
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+import sys
+sys.path.append("/home/mrsd/HackCMU/BodyTracking")
+
+from online_proc import OnlineProcessor
+
+online_processor = OnlineProcessor()
+
 # Parse command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', type=str, choices=['zed', 'webcam'], 
@@ -30,6 +37,7 @@ active_connections: List[WebSocket] = []
 
 # Store global counter
 exercise_counter: int = 0
+prediction: int = 0
 
 COACH_SUGGESTION = "Keep your back straight and maintain good form!"
 
@@ -37,7 +45,8 @@ async def broadcast_counter():
     """Send current counter value to all clients"""
     counter_data = {
         'type': 'counter',
-        'count': exercise_counter
+        'count': exercise_counter,
+        'prediction': prediction,
     }
     await broadcast_frame(counter_data)
 
@@ -119,12 +128,12 @@ async def webcam_feed():
             frame = cv2.flip(frame, 1)
             
             # Show local preview window
-            cv2.imshow("Local Webcam View", frame)
+            # cv2.imshow("Local Webcam View", frame)
             
-            # Handle window events (required for window to work properly)
-            key = cv2.waitKey(1)
-            if key == 27:  # ESC key
-                break
+            # # Handle window events (required for window to work properly)
+            # key = cv2.waitKey(1)
+            # if key == 27:  # ESC key
+            #     break
             
             # Encode frame to JPEG
             _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
@@ -163,7 +172,7 @@ async def zed_feed():
         # Import ZED SDK and related modules
         import pyzed.sl as sl
         import cv_viewer.tracking_viewer as cv_viewer
-        import ogl_viewer.viewer as gl
+        # import ogl_viewer.viewer as gl
     except ImportError as e:
         print(f"Error: Required ZED packages not available: {e}")
         print("Please install ZED SDK and required packages for ZED mode")
@@ -176,7 +185,7 @@ async def zed_feed():
     init_params = sl.InitParameters()
     init_params.camera_resolution = sl.RESOLUTION.HD1080
     init_params.coordinate_units = sl.UNIT.METER
-    init_params.depth_mode = sl.DEPTH_MODE.ULTRA
+    init_params.depth_mode = sl.DEPTH_MODE.NEURAL_LIGHT
     init_params.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
     
     # Open camera
@@ -221,12 +230,12 @@ async def zed_feed():
     ]
     
     # Initialize OpenGL viewer
-    viewer = gl.GLViewer()
-    viewer.init(
-        camera_info.camera_configuration.calibration_parameters.left_cam,
-        body_param.enable_tracking,
-        body_param.body_format
-    )
+    # viewer = gl.GLViewer()
+    # viewer.init(
+    #     camera_info.camera_configuration.calibration_parameters.left_cam,
+    #     body_param.enable_tracking,
+    #     body_param.body_format
+    # )
     
     print("ZED camera and body tracking initialized successfully")
     
@@ -236,7 +245,7 @@ async def zed_feed():
                 # Retrieve image and bodies
                 zed.retrieve_image(image, sl.VIEW.LEFT, sl.MEM.CPU, display_resolution)
                 zed.retrieve_bodies(bodies, body_runtime_param)
-                
+                online_processor.update(bodies)
                 # Get OpenCV image
                 image_ocv = image.get_data()
                 
@@ -250,17 +259,17 @@ async def zed_feed():
                 )
                 
                 # Show local OpenCV window
-                cv2.imshow("ZED Body Tracking", image_ocv)
-                key = cv2.waitKey(1)
-                if key == 27:  # ESC key
-                    break
+                # cv2.imshow("ZED Body Tracking", image_ocv)
+                # key = cv2.waitKey(1)
+                # if key == 27:  # ESC key
+                    # break
                 
                 # Update 3D viewer with image and bodies data
-                viewer.update_view(image, bodies)
+                # viewer.update_view(image, bodies)
                 
                 # Break the loop if viewer is closed
-                if not viewer.is_available():
-                    break
+                # if not viewer.is_available():
+                    # break
                 
                 # Encode frame to JPEG
                 _, buffer = cv2.imencode('.jpg', image_ocv, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
@@ -274,16 +283,17 @@ async def zed_feed():
                 })
 
                 # TODO: Implement counter logic based on body tracking data
-                # exercise_counter += 1
-                # await broadcast_counter()
+                global exercise_counter, prediction
+                exercise_counter, prediction = online_processor.get_count_and_prediction()
+                await broadcast_counter()
                 
                 # Control frame rate (30 FPS)
                 await asyncio.sleep(1/30)
     except Exception as e:
         print(f"Error in ZED feed: {e}")
     finally:
-        cv2.destroyAllWindows()
-        viewer.exit()
+        # cv2.destroyAllWindows()
+        # viewer.exit()
         zed.disable_body_tracking()
         zed.disable_positional_tracking()
         zed.close()
