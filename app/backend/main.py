@@ -51,21 +51,32 @@ async def broadcast_frame(frame_data: Dict[str, Any]):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     print("New client connecting...")
-    await websocket.accept()
-    print("Client connected successfully")
-    active_connections.append(websocket)
-    
     try:
+        await websocket.accept()
+        print("Client connected successfully")
+        active_connections.append(websocket)
+        print(f"Active connections: {len(active_connections)}")
+        
         while True:
             # Keep connection alive
             msg = await websocket.receive_text()
             print(f"Received from client: {msg}")
+            if msg == 'ping':
+                print("Received ping, sending pong")
+                await websocket.send_json({"type": "pong"})
     except WebSocketDisconnect:
         print("Client disconnected")
-        active_connections.remove(websocket)
+        if websocket in active_connections:
+            active_connections.remove(websocket)
+            print(f"Active connections after disconnect: {len(active_connections)}")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+        if websocket in active_connections:
+            active_connections.remove(websocket)
 
 async def webcam_feed():
     """Capture and broadcast frames from webcam"""
+    print("Initializing webcam feed...")
     cap = cv2.VideoCapture(0)
     
     if not cap.isOpened():
@@ -73,6 +84,7 @@ async def webcam_feed():
         return
     
     print("Webcam opened successfully")
+    frame_count = 0
     
     try:
         while True:
@@ -106,6 +118,9 @@ async def webcam_feed():
             
             # Broadcast frame to all clients
             await broadcast_frame(frame_data)
+            frame_count += 1
+            if frame_count % 30 == 0:  # Log every 30 frames
+                print(f"Sent {frame_count} frames, current active connections: {len(active_connections)}")
             
             # Control frame rate (30 FPS)
             await asyncio.sleep(1/30)
@@ -242,15 +257,29 @@ async def zed_feed():
         zed.disable_positional_tracking()
         zed.close()
 
-@app.on_event("startup")
-async def startup_event():
-    """Start video feed when server starts"""
-    if args.mode == 'zed':
-        print("Starting in ZED camera mode")
-        asyncio.create_task(zed_feed())
-    else:
-        print("Starting in webcam mode")
-        asyncio.create_task(webcam_feed())
+# Store video feed tasks
+video_tasks = {}
+
+@app.post("/start")
+async def start_video_feed():
+    """Start video feed on request"""
+    print("Received start video feed request")
+    try:
+        if not video_tasks.get('feed'):
+            if args.mode == 'zed':
+                # TODO: Implement frame processing
+                print("Starting in ZED camera mode")
+                video_tasks['feed'] = asyncio.create_task(zed_feed())
+            else:
+                print("Starting in webcam mode")
+                video_tasks['feed'] = asyncio.create_task(webcam_feed())
+            print("Video feed task created successfully")
+        else:
+            print("Video feed task already exists")
+        return {"status": "Video feed started", "mode": args.mode}
+    except Exception as e:
+        print(f"Error starting video feed: {e}")
+        return {"status": "error", "message": str(e)}
 
 @app.get("/")
 async def read_root():
