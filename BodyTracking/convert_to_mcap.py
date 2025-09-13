@@ -6,6 +6,7 @@ from body_tracking_interface.body_tracking_pb2 import (
     Counter,
 )
 from mcap_protobuf.writer import Writer
+import numpy as np
 import argparse
 
 
@@ -92,6 +93,19 @@ def split_squat(head_y_list: list):
     print(f"Found {len(h_peaks)} peaks")
     return h_peaks, l_peaks, lpf_head_y_copy
 
+NUM_SQUAT_FAILURE_CLASS = 6
+
+def parse_labels(label_str: str):
+    y = np.zeros(NUM_SQUAT_FAILURE_CLASS, dtype=np.int8)
+    if label_str.strip() == "":
+        return y
+    for idx in label_str.split(","):
+        i = int(idx)
+        if 0 <= i < NUM_SQUAT_FAILURE_CLASS:
+            y[i] = 1
+        else:
+            raise ValueError(f"Invalid label index {i}, must be 0–{NUM_SQUAT_FAILURE_CLASS-1}")
+    return y
 
 def main():
     parser = argparse.ArgumentParser(description="Convert body tracking JSON to MCAP")
@@ -103,9 +117,9 @@ def main():
     )
     parser.add_argument(
         "--label",
-        type=int,
-        help="label for the squat session, 0 for correct, 1 for incorrect",
-        default=0,
+        type=str,
+        help="comma-separated list of error indices (0–5). Empty means perfect rep.",
+        default=""
     )
     args = parser.parse_args()
 
@@ -151,6 +165,7 @@ def main():
         l = 0
 
         sq = []
+        multi_label = parse_labels(args.label)
 
         for i in range(start_idx, len(data["data"])):
             if l < len(l_peaks) and i - start_idx == l_peaks[l]:
@@ -159,7 +174,7 @@ def main():
                     count += 1
                     per_squat_data.append(
                         {
-                            "label": args.label,
+                            "label": multi_label,
                             "data": sq,
                         }
                     )

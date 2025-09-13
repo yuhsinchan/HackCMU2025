@@ -53,9 +53,9 @@ class SquatMistakeDetector:
         "knee_valgus",            # knees collapsing inward
         "butt_wink",              # posterior pelvic tilt at the bottom
         "torso_lean",             # excessive forward torso collapse
-        "spinal_rounding",        # lumbar or upper back rounding
+        # "spinal_rounding",        # lumbar or upper back rounding
         "squat_shallow",          # squat too shallow
-        "heel_lift"               # heels coming off the ground
+        # "heel_lift"               # heels coming off the ground
     ]
 
     # BODY_34 indices (edit if your mapping differs)
@@ -216,9 +216,9 @@ class SquatMistakeDetector:
             bool(knee_valgus),
             bool(butt_wink),
             bool(torso_lean),
-            bool(spine_rounding),
+            # bool(spine_rounding),
             bool(squat_shallow),
-            bool(heel_lift),
+            # bool(heel_lift),
         ]
     # User-friendly mistake descriptions as a dict
     MISTAKE_DESCRIPTIONS = {
@@ -260,7 +260,7 @@ if __name__ == "__main__":
 
     norm_keypoints, meta_data = canonicalize_body34(keypoints_3d)
     for name, idx in BODY34_IDX.items():
-        pt = norm_keypoints[10][idx]
+        pt = norm_keypoints[31][idx]
         print(f"(" + ",".join(map(str, pt)) + ")")
 
     detector = SquatMistakeDetector()
