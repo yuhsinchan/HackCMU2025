@@ -9,6 +9,7 @@ function App() {
   const [lastFrameTime, setLastFrameTime] = useState(null)
   const [connectionQuality, setConnectionQuality] = useState('checking')
   const [suggestion, setSuggestion] = useState('')
+  const [counter, setCounter] = useState(0)
   const imgRef = useRef(null)
   const frameCountRef = useRef(0)
   const lastFrameTimeRef = useRef(Date.now())
@@ -69,6 +70,9 @@ function App() {
         } else if (msg.type === 'suggestion') {
           console.log('Received suggestion:', msg.message)
           setSuggestion(msg.message)
+        } else if (msg.type === 'counter') {
+          console.log('Received counter update:', msg.count)
+          setCounter(msg.count)
         }
       } catch (e) {
         console.error('Error processing message:', e)
@@ -165,6 +169,30 @@ function App() {
                       boxShadow: '0 0 8px #00FF95',
                       animation: 'pulse 1.5s infinite'
                     }}/>
+                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Counter</h2>
+                  </div>
+                  <p style={{ 
+                    margin: 0, 
+                    color: '#d1d5db',
+                    fontSize: '2.5rem',
+                    lineHeight: 1.5,
+                    textAlign: 'center',
+                    fontWeight: 'bold'
+                  }}>
+                    {counter}
+                  </p>
+                </div>
+
+                <div style={{ background: '#111827', borderRadius: 12, padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <div style={{ 
+                      width: 8, 
+                      height: 8, 
+                      borderRadius: '50%', 
+                      background: '#00FF95',
+                      boxShadow: '0 0 8px #00FF95',
+                      animation: 'pulse 1.5s infinite'
+                    }}/>
                     <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Coach Feedback</h2>
                   </div>
                   <p style={{ 
@@ -175,7 +203,7 @@ function App() {
                   }}>
                     {suggestion || 'Analyzing your form...'}
                   </p>
-                </div>
+                </div>                
               </div>
             </div>
           </div>

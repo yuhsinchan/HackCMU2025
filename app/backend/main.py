@@ -28,7 +28,18 @@ app.add_middleware(
 # Store active WebSocket connections
 active_connections: List[WebSocket] = []
 
+# Store global counter
+exercise_counter: int = 0
+
 COACH_SUGGESTION = "Keep your back straight and maintain good form!"
+
+async def broadcast_counter():
+    """Send current counter value to all clients"""
+    counter_data = {
+        'type': 'counter',
+        'count': exercise_counter
+    }
+    await broadcast_frame(counter_data)
 
 async def broadcast_frame(frame_data: Dict[str, Any]):
     """Send frame data to all connected clients"""
@@ -50,6 +61,7 @@ async def broadcast_frame(frame_data: Dict[str, Any]):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    global exercise_counter  # Declare global at the start of the function
     print("New client connecting...")
     try:
         await websocket.accept()
@@ -68,14 +80,23 @@ async def websocket_endpoint(websocket: WebSocket):
         print("Client disconnected")
         if websocket in active_connections:
             active_connections.remove(websocket)
+            # Reset counter if this was the last client
+            if len(active_connections) == 0:
+                print("All clients disconnected, reset counter to 0")
+                exercise_counter = 0
             print(f"Active connections after disconnect: {len(active_connections)}")
     except Exception as e:
         print(f"WebSocket error: {e}")
         if websocket in active_connections:
             active_connections.remove(websocket)
+            # Reset counter if this was the last client
+            if len(active_connections) == 0:
+                print("All clients disconnected, reset counter to 0")
+                exercise_counter = 0
 
 async def webcam_feed():
     """Capture and broadcast frames from webcam"""
+    global exercise_counter  # Declare global at the start of the function
     print("Initializing webcam feed...")
     cap = cv2.VideoCapture(0)
     
@@ -119,6 +140,12 @@ async def webcam_feed():
             # Broadcast frame to all clients
             await broadcast_frame(frame_data)
             frame_count += 1
+            
+            # Every 3 seconds (90 frames at 30 FPS), increment and broadcast the counter
+            if frame_count % 90 == 0:
+                exercise_counter += 1
+                await broadcast_counter()
+            
             if frame_count % 30 == 0:  # Log every 30 frames
                 print(f"Sent {frame_count} frames, current active connections: {len(active_connections)}")
             
@@ -245,6 +272,10 @@ async def zed_feed():
                     'type': 'frame',
                     'image': frame_b64
                 })
+
+                # TODO: Implement counter logic based on body tracking data
+                # exercise_counter += 1
+                # await broadcast_counter()
                 
                 # Control frame rate (30 FPS)
                 await asyncio.sleep(1/30)
