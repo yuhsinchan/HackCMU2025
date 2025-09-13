@@ -36,20 +36,23 @@ class PoseDataset(Dataset):
                 keypoints_flat = np.array(frame['keypoints_3d']).flatten()
                 keypoints_sequence.append(keypoints_flat)
                 timestamps.append(frame['ts'])
+            seq_with_time = self._add_temporal_features(keypoints_sequence, timestamps)
+            sequences.append(seq_with_time)
+            labels.append(label)
 
-            # Create sliding windows if sequence is long enough
-            if len(keypoints_sequence) >= self.sequence_length:
-                for i in range(len(keypoints_sequence) - self.sequence_length + 1):
-                    seq = keypoints_sequence[i:i + self.sequence_length]
-                    seq_timestamps = timestamps[i:i + self.sequence_length]
+            # # Create sliding windows if sequence is long enough
+            # if len(keypoints_sequence) >= self.sequence_length:
+            #     for i in range(len(keypoints_sequence) - self.sequence_length + 1):
+            #         seq = keypoints_sequence[i:i + self.sequence_length]
+            #         seq_timestamps = timestamps[i:i + self.sequence_length]
                     
-                    # Add time differences as features
-                    seq_with_time = self._add_temporal_features(seq, seq_timestamps)
+            #         # Add time differences as features
+            #         seq_with_time = self._add_temporal_features(seq, seq_timestamps)
                     
-                    sequences.append(seq_with_time)
-                    labels.append(label)
+            #         sequences.append(seq_with_time)
+            #         labels.append(label)
         
-        return np.array(sequences), np.array(labels)
+        return sequences, np.array(labels)
     
     def _add_temporal_features(self, keypoints_seq, timestamps):
         """Add temporal information to keypoints"""
@@ -74,12 +77,12 @@ class PoseDataset(Dataset):
         return sequence, label
 
 
-def create_data_loaders(data_path, sequence_length=30, batch_size=32, train_split=0.7, val_split=0.15):
+def create_data_loaders(data_path, sequence_length=30, batch_size=1, train_split=0.7, val_split=0.15):
     """Create train, validation, and test data loaders"""
     
     # Create dataset
     dataset = PoseDataset(data_path, sequence_length)
-    print("Dataset shape:", dataset.sequences.shape)
+    print("Dataset shape:", len(dataset.sequences))
     # Calculate split sizes
     total_size = len(dataset)
 
@@ -88,8 +91,9 @@ def create_data_loaders(data_path, sequence_length=30, batch_size=32, train_spli
     test_size = total_size - train_size - val_size
     
     # Split dataset
+    gen = torch.Generator().manual_seed(87)
     train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
-        dataset, [train_size, val_size, test_size]
+        dataset, [train_size, val_size, test_size], generator=gen
     )
     
     # Create data loaders

@@ -17,8 +17,8 @@ def main():
     CONFIG = {
         'data_path': '../Dataset/merged_data.json',
         'sequence_length': 9,
-        'batch_size': 16,
-        'num_epochs': 15,
+        'batch_size': 1,
+        'num_epochs': 50,
         'learning_rate': 0.001,
         'hidden_channels': [64, 128],
         'kernel_size': 3,

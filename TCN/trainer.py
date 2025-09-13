@@ -46,11 +46,11 @@ class Trainer:
             data, targets = data.to(self.device), targets.to(self.device)
             
             # Forward pass
-            self.optimizer.zero_grad()
             outputs = self.model(data)
             loss = self.criterion(outputs, targets)
             
             # Backward pass
+            self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             
@@ -144,8 +144,6 @@ class Trainer:
                 
                 all_predictions.extend(predicted.cpu().numpy())
                 all_targets.extend(targets.cpu().numpy())
-        
-        # Calculate metrics
         accuracy = accuracy_score(all_targets, all_predictions)
         
         # Get unique labels for classification report
