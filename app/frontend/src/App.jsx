@@ -15,6 +15,85 @@ function App() {
   const lastCounterRef = useRef(-1)
   const lastPredRef = useRef(-1)
 
+  // Celebration state + streak + confetti
+  const [celebrate, setCelebrate] = useState(false)
+  const celebrateTimeoutRef = useRef(null)
+  const [streak, setStreak] = useState(0)
+  const videoContainerRef = useRef(null)
+  const confettiCanvasRef = useRef(null)
+  const confettiRafRef = useRef(null)
+
+  const triggerCelebrate = () => {
+    if (celebrateTimeoutRef.current) {
+      clearTimeout(celebrateTimeoutRef.current)
+    }
+    setCelebrate(true)
+    celebrateTimeoutRef.current = setTimeout(() => setCelebrate(false), 1200)
+  }
+
+  const triggerConfettiBurst = () => {
+    const container = videoContainerRef.current
+    const canvas = confettiCanvasRef.current
+    if (!container || !canvas) return
+
+    // Size canvas to container
+    const { clientWidth: w, clientHeight: h } = container
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const colors = ['#00FF95', '#34D399', '#A7F3D0', '#ffffff']
+    const count = Math.min(140, Math.max(60, Math.floor((w * h) / 7000)))
+    const particles = new Array(count).fill(0).map(() => {
+      const angle = (Math.random() * Math.PI) - Math.PI / 2
+      const speed = 6 + Math.random() * 7
+      return {
+        x: w * 0.5,
+        y: h * 0.4,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2,
+        g: 0.25 + Math.random() * 0.35,
+        size: 4 + Math.random() * 6,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.3,
+        color: colors[(Math.random() * colors.length) | 0],
+        life: 900 + Math.random() * 500
+      }
+    })
+
+    const start = performance.now()
+    const draw = (t) => {
+      const elapsed = t - start
+      ctx.clearRect(0, 0, w, h)
+      particles.forEach(p => {
+        p.vy += p.g
+        p.x += p.vx
+        p.y += p.vy
+        p.rot += p.vr
+        p.life -= 16
+        ctx.save()
+        ctx.translate(p.x, p.y)
+        ctx.rotate(p.rot)
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 400))
+        ctx.fillStyle = p.color
+        ctx.fillRect(-p.size * 0.5, -p.size * 0.5, p.size, p.size)
+        ctx.restore()
+      })
+
+      if (elapsed < 1200) {
+        confettiRafRef.current = requestAnimationFrame(draw)
+      } else {
+        ctx.clearRect(0, 0, w, h)
+        if (confettiRafRef.current) cancelAnimationFrame(confettiRafRef.current)
+        confettiRafRef.current = null
+      }
+    }
+
+    if (confettiRafRef.current) cancelAnimationFrame(confettiRafRef.current)
+    confettiRafRef.current = requestAnimationFrame(draw)
+  }
+
   // Audio mapping function
   const getAudioFile = (prediction) => {
     const audioFiles = {
@@ -132,6 +211,13 @@ function App() {
           // Only play audio when counter changes (new rep)
           if (newCount !== lastCounterRef.current) {
             playAudio(newPred)
+            if (newPred === 0) {
+              triggerCelebrate()
+              triggerConfettiBurst()
+              setStreak((s) => s + 1)
+            } else {
+              setStreak(0)
+            }
             lastCounterRef.current = newCount
           }
           if (newPred !== -1) {
@@ -170,6 +256,14 @@ function App() {
       if (currentAudioRef.current) {
         currentAudioRef.current.pause()
         currentAudioRef.current = null
+      }
+      if (celebrateTimeoutRef.current) {
+        clearTimeout(celebrateTimeoutRef.current)
+        celebrateTimeoutRef.current = null
+      }
+      if (confettiRafRef.current) {
+        cancelAnimationFrame(confettiRafRef.current)
+        confettiRafRef.current = null
       }
     }
   }, [isStarted])
@@ -211,7 +305,7 @@ function App() {
             
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
               <div style={{ background: '#111827', borderRadius: 12, padding: 8 }}>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative' }} ref={videoContainerRef}>
                   <img 
                     ref={imgRef} 
                     alt="Video feed" 
@@ -225,6 +319,10 @@ function App() {
                     pointerEvents: 'none',
                     opacity: 0.3
                   }}/>
+                  <div className={`shine-sweep ${celebrate ? 'show' : ''}`} />
+                  <canvas ref={confettiCanvasRef} className="confetti-canvas" />
+                  <div className={`streak-badge ${streak >= 2 ? 'show' : ''}`}>Streak ×{streak}</div>
+                  <div className={`perfect-toast ${celebrate ? 'show' : ''}`}>Perfect rep!</div>
                 </div>
               </div>
               

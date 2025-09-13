@@ -167,3 +167,81 @@ body {
   max-height: 100%;
   object-fit: contain;
 }
+
+/* ======================= */
+/* Bigger "apparent" effects */
+/* ======================= */
+
+/* Confetti canvas overlay */
+.confetti-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Diagonal shine sweep across the video */
+.shine-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(0,0,0,0) 35%, rgba(0,255,149,0.25) 50%, rgba(0,0,0,0) 65%);
+  opacity: 0;
+  transform: translateX(-150%);
+  pointer-events: none;
+}
+.shine-sweep.show { animation: shine-move 800ms ease-out; }
+@keyframes shine-move {
+  0%   { opacity: 0; transform: translateX(-150%); }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(150%); }
+}
+
+/* Streak badge (top-left) */
+.streak-badge {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0,255,149,0.15);
+  border: 1px solid #00FF95;
+  color: #e5e7eb;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .3px;
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: scale(.85) translateY(-6px);
+}
+.streak-badge.show { animation: streak-pop 600ms ease forwards; }
+@keyframes streak-pop {
+  0%   { opacity: 0; transform: scale(.85) translateY(-6px); }
+  35%  { opacity: 1; transform: scale(1.08) translateY(0); }
+  70%  { opacity: 1; transform: scale(.98) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Perfect toast (bottom-center of video) */
+.perfect-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%) translateY(12px) scale(.96);
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: #0b0f12;
+  background: linear-gradient(180deg, #00FF95, #22c55e);
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 8px 24px rgba(0,255,149,0.25);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.perfect-toast.show { animation: toast-in 900ms cubic-bezier(.2,.9,.25,1.2); }
+@keyframes toast-in {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(12px) scale(.96); }
+  25%  { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.06); }
+  65%  { opacity: 1; transform: translateX(-50%) translateY(0) scale(.98); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(0) scale(1); }
+}
