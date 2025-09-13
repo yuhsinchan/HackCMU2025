@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+message Keypoint2D {
+  float x = 1;
+  float y = 2;
+}
+
+message Keypoint3D {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message BodyTracking34 {
+  // 0 PELVIS	          9 LEFT_HANDTIP	 18 LEFT_HIP	   27 NOSE
+  // 1 NAVAL_SPINE	   10 LEFT_THUMB	   19 LEFT_KNEE	   28 LEFT_EYE
+  // 2 CHEST_SPINE	   11 RIGHT_CLAVICLE 20 LEFT_ANKLE	 29 LEFT_EAR
+  // 3 NECK	           12 RIGHT_SHOULDER 21 LEFT_FOOT	   30 RIGHT_EYE
+  // 4 LEFT_CLAVICLE	 13 RIGHT_ELBOW	   22 RIGHT_HIP	   31 RIGHT_EAR
+  // 5 LEFT_SHOULDER	 14 RIGHT_WRIST	   23 RIGHT_KNEE	 32 LEFT_HEEL
+  // 6 LEFT_ELBOW	     15 RIGHT_HAND	   24 RIGHT_ANKLE	 33 RIGHT_HEEL
+  // 7 LEFT_WRIST	     16 RIGHT_HANDTIP	 25 RIGHT_FOOT		
+  // 8 LEFT_HAND	     17 RIGHT_THUMB	   26 HEAD
+  uint32 frame_number = 1;
+  float confidence = 2;
+
+  Keypoint2D pelvis_2d = 3;
+  Keypoint2D naval_spine_2d = 4;
+  Keypoint2D chest_spine_2d = 5;
+  Keypoint2D neck_2d = 6;
+  Keypoint2D left_clavicle_2d = 7;
+  Keypoint2D left_shoulder_2d = 8;
+  Keypoint2D left_elbow_2d = 9;
+  Keypoint2D left_wrist_2d = 10;
+  Keypoint2D left_hand_2d = 11;
+  Keypoint2D left_handtip_2d = 12;
+  Keypoint2D left_thumb_2d = 13;
+  Keypoint2D right_clavicle_2d = 14;
+  Keypoint2D right_shoulder_2d = 15;
+  Keypoint2D right_elbow_2d = 16;
+  Keypoint2D right_wrist_2d = 17;
+  Keypoint2D right_hand_2d = 18;
+  Keypoint2D right_handtip_2d = 19;
+  Keypoint2D right_thumb_2d = 20;
+  Keypoint2D left_hip_2d = 21;
+  Keypoint2D left_knee_2d = 22;
+  Keypoint2D left_ankle_2d = 23;
+  Keypoint2D left_foot_2d = 24;
+  Keypoint2D left_heel_2d = 25;
+  Keypoint2D right_hip_2d = 26;
+  Keypoint2D right_knee_2d = 27;
+  Keypoint2D right_ankle_2d = 28;
+  Keypoint2D right_foot_2d = 29;
+  Keypoint2D right_heel_2d = 30;
+  Keypoint2D nose_2d = 31;
+  Keypoint2D left_eye_2d = 32;
+  Keypoint2D left_ear_2d = 33;
+  Keypoint2D right_eye_2d = 34;
+  Keypoint2D right_ear_2d = 35;
+  Keypoint2D head_2d = 36;
+
+  Keypoint3D pelvis_3d = 37;
+  Keypoint3D naval_spine_3d = 38;
+  Keypoint3D chest_spine_3d = 39;
+  Keypoint3D neck_3d = 40;
+  Keypoint3D left_clavicle_3d = 41;
+  Keypoint3D left_shoulder_3d = 42;
+  Keypoint3D left_elbow_3d = 43;
+  Keypoint3D left_wrist_3d = 44;
+  Keypoint3D left_hand_3d = 45;
+  Keypoint3D left_handtip_3d = 46;
+  Keypoint3D left_thumb_3d = 47;
+  Keypoint3D right_clavicle_3d = 48;
+  Keypoint3D right_shoulder_3d = 49;
+  Keypoint3D right_elbow_3d = 50;
+  Keypoint3D right_wrist_3d = 51;
+  Keypoint3D right_hand_3d = 52;
+  Keypoint3D right_handtip_3d = 53;
+  Keypoint3D right_thumb_3d = 54;
+  Keypoint3D left_hip_3d = 55;
+  Keypoint3D left_knee_3d = 56;
+  Keypoint3D left_ankle_3d = 57;
+  Keypoint3D left_foot_3d = 58;
+  Keypoint3D left_heel_3d = 59;
+  Keypoint3D right_hip_3d = 60;
+  Keypoint3D right_knee_3d = 61;
+  Keypoint3D right_ankle_3d = 62;
+  Keypoint3D right_foot_3d = 63;
+  Keypoint3D right_heel_3d = 64;
+  Keypoint3D nose_3d = 65;
+  Keypoint3D left_eye_3d = 66;
+  Keypoint3D left_ear_3d = 67;
+  Keypoint3D right_eye_3d = 68;
+  Keypoint3D right_ear_3d = 69;
+  Keypoint3D head_3d = 70;
+}
+
+message Counter {
+  uint32 count = 1;
+  uint32 state = 2; // 0: idle, 1: down
+}
