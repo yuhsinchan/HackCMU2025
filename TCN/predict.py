@@ -113,7 +113,11 @@ def predict_from_file(model_path, data_path):
             # Make prediction
             prediction, confidence = predictor.predict_sequence(keypoints_3d, timestamps)
             
-            result_text = "INCORRECT" if prediction == 1 else "CORRECT"
+            result_text = f"Class {prediction}"
+            if prediction == 0:
+                result_text = "CORRECT (Class 0)"
+            else:
+                result_text = f"INCORRECT (Class {prediction})"
             
             print(f"Sample {i+1}: {result_text} (confidence: {confidence:.3f})")
             
@@ -121,7 +125,12 @@ def predict_from_file(model_path, data_path):
             if true_label is not None:
                 correct = (prediction == true_label)
                 status = "✓" if correct else "✗"
-                print(f"  True label: {'INCORRECT' if true_label == 1 else 'CORRECT'} {status}")
+                true_text = f"Class {true_label}"
+                if true_label == 0:
+                    true_text = "CORRECT (Class 0)"
+                else:
+                    true_text = f"INCORRECT (Class {true_label})"
+                print(f"  True label: {true_text} {status}")
                 
                 if correct:
                     correct_predictions += 1

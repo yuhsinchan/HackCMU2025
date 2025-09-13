@@ -97,6 +97,7 @@ class Trainer:
         best_model_state = None
         
         for epoch in range(num_epochs):
+            print(f"Starting epoch {epoch+1}/{num_epochs}")
             # Train and validate
             train_loss, train_acc = self.train_epoch(train_loader)
             val_loss, val_acc = self.validate_epoch(val_loader)
@@ -116,12 +117,12 @@ class Trainer:
                 best_model_state = self.model.state_dict().copy()
             
             # Print progress
-            if verbose and (epoch % 10 == 0 or epoch == num_epochs - 1):
-                print(f'Epoch {epoch+1}/{num_epochs}:')
-                print(f'  Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%')
-                print(f'  Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%')
-                print(f'  Best Val Acc: {best_val_acc:.2f}%')
-                print('-' * 50)
+            # if verbose and (epoch % 10 == 0 or epoch == num_epochs - 1):
+            print(f'Epoch {epoch+1}/{num_epochs}:')
+            print(f'  Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%')
+            print(f'  Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%')
+            print(f'  Best Val Acc: {best_val_acc:.2f}%')
+            print('-' * 50)
         
         # Load best model
         if best_model_state:
@@ -146,10 +147,17 @@ class Trainer:
         
         # Calculate metrics
         accuracy = accuracy_score(all_targets, all_predictions)
+        
+        # Get unique labels for classification report
+        unique_labels = sorted(set(all_targets) | set(all_predictions))
+        target_names = [f'Class_{i}' for i in unique_labels]
+        
         report = classification_report(
             all_targets, all_predictions, 
-            target_names=['Correct', 'Incorrect'],
-            output_dict=True
+            labels=unique_labels,
+            target_names=target_names,
+            output_dict=True,
+            zero_division=0
         )
         
         return accuracy, report, all_predictions, all_targets

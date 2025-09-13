@@ -53,7 +53,7 @@ class TemporalBlock(nn.Module):
 class PoseValidationTCN(nn.Module):
     """Complete TCN model for pose validation"""
     
-    def __init__(self, input_size, hidden_channels=[64, 128], kernel_size=3, dropout=0.2):
+    def __init__(self, input_size, hidden_channels=[64, 128], kernel_size=3, dropout=0.2, num_classes=7):
         super().__init__()
         
         layers = []
@@ -70,7 +70,7 @@ class PoseValidationTCN(nn.Module):
             ))
         
         self.tcn = nn.Sequential(*layers)
-        self.classifier = nn.Linear(hidden_channels[-1], 2)  # Binary classification
+        self.classifier = nn.Linear(hidden_channels[-1], num_classes)  # Multi-class classification
         self.dropout = nn.Dropout(dropout)
         
     def forward(self, x):

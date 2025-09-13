@@ -11,7 +11,7 @@ class Config:
     
     # Data settings
     DATA_PATH = 'pose_data.json'
-    SEQUENCE_LENGTH = 10  # Number of consecutive frames per sequence
+    SEQUENCE_LENGTH = 9  # Number of consecutive frames per sequence
     TRAIN_SPLIT = 0.7
     VAL_SPLIT = 0.15
     # TEST_SPLIT = 0.15 (calculated automatically)
@@ -21,16 +21,16 @@ class Config:
     HIDDEN_CHANNELS = [64, 128]
     KERNEL_SIZE = 3
     DROPOUT = 0.2
-    NUM_CLASSES = 2
+    NUM_CLASSES = 7
     
     # Training settings
-    BATCH_SIZE = 32
-    NUM_EPOCHS = 100
+    BATCH_SIZE = 16
+    NUM_EPOCHS = 15
     LEARNING_RATE = 0.001
     RANDOM_SEED = 42
     
     # System settings
-    NUM_WORKERS = 2
+    NUM_WORKERS = 1
     DEVICE = 'auto'  # 'auto', 'cpu', or 'cuda'
     
     # Output settings

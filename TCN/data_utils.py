@@ -27,7 +27,6 @@ class PoseDataset(Dataset):
         for sample in data:
             label = sample['label']
             frames = sample['data']
-
             # Extract keypoints and create sequences
             keypoints_sequence = []
             timestamps = []
@@ -80,7 +79,7 @@ def create_data_loaders(data_path, sequence_length=30, batch_size=32, train_spli
     
     # Create dataset
     dataset = PoseDataset(data_path, sequence_length)
-    # print("Dataset shape:", dataset.sequences.shape)
+    print("Dataset shape:", dataset.sequences.shape)
     # Calculate split sizes
     total_size = len(dataset)
 
@@ -95,13 +94,13 @@ def create_data_loaders(data_path, sequence_length=30, batch_size=32, train_spli
     
     # Create data loaders
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=2
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=1
     )
     val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=2
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=1
     )
     test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=False, num_workers=2
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=1
     )
     
     return train_loader, val_loader, test_loader

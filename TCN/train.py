@@ -15,10 +15,10 @@ def main():
     
     # Configuration
     CONFIG = {
-        'data_path': '../Dataset/body_tracking_session_20250912_184701_20250912_185532_per_squat.json',
-        'sequence_length': 10,
-        'batch_size': 32,
-        'num_epochs': 100,
+        'data_path': '../Dataset/merged_data.json',
+        'sequence_length': 9,
+        'batch_size': 16,
+        'num_epochs': 15,
         'learning_rate': 0.001,
         'hidden_channels': [64, 128],
         'kernel_size': 3,
@@ -49,13 +49,14 @@ def main():
     print(f"  Train: {len(train_loader.dataset)}")
     print(f"  Validation: {len(val_loader.dataset)}")
     print(f"  Test: {len(test_loader.dataset)}")
-    # return 
+    
     # Create model
     model = PoseValidationTCN(
         input_size=input_size,
         hidden_channels=CONFIG['hidden_channels'],
         kernel_size=CONFIG['kernel_size'],
-        dropout=CONFIG['dropout']
+        dropout=CONFIG['dropout'],
+        num_classes=7  # 0=correct, 1-6=incorrect types
     )
     
     print(f"\nModel created:")
