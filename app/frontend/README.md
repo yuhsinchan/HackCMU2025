@@ -27,7 +27,7 @@ To start the development server:
 npm run dev
 ```
 
-This will start the Vite development server. By default, it will be available at `http://localhost:3000`.
+This will start the Vite development server. By default, it will be available at `http://172.26.203.22:3000`.
 
 ## Building for Production
 

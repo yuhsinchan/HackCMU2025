@@ -8,16 +8,109 @@ function App() {
   const [error, setError] = useState(null)
   const [lastFrameTime, setLastFrameTime] = useState(null)
   const [connectionQuality, setConnectionQuality] = useState('checking')
-  const [suggestion, setSuggestion] = useState('')
-  const [counter, setCounter] = useState(0)
+  const [counter, setCounter] = useState(-1)
+  const [pred, setPred] = useState(-1)
   const imgRef = useRef(null)
+  const currentAudioRef = useRef(null)
+  const lastPredRef = useRef(-1)
+
+  // Audio mapping function
+  const getAudioFile = (prediction) => {
+    const audioFiles = {
+      0: '/audio/Correct.mp3',
+      1: '/audio/Error0.mp3',
+      2: '/audio/Error1.mp3',
+      3: '/audio/Error2.mp3',
+      4: '/audio/Error3.mp3'
+    }
+    return audioFiles[prediction]
+  }
+
+  // Handle audio playback
+  const playAudio = (prediction) => {
+    if (prediction === -1) {
+      console.log('Skipping audio for initial state')
+      return
+    }
+    
+    const audioFile = getAudioFile(prediction)
+    console.log('Attempting to play audio:', audioFile)
+    if (!audioFile) {
+      console.log('No audio file found for prediction:', prediction)
+      return
+    }
+
+    // If it's the same prediction and audio is still playing, don't play again
+    if (prediction === lastPredRef.current && currentAudioRef.current) {
+      const isPlaying = !currentAudioRef.current.paused && 
+                       !currentAudioRef.current.ended && 
+                       currentAudioRef.current.currentTime > 0
+      if (isPlaying) {
+        console.log('Same prediction and audio still playing, skipping')
+        return
+      }
+    }
+
+    // Stop any current audio before playing new one
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause()
+      currentAudioRef.current.currentTime = 0
+    }
+
+    // Create and play new audio
+    console.log('Creating new audio for file:', audioFile)
+    const audio = new Audio(audioFile)
+    
+    // Add event listeners for debugging
+    audio.addEventListener('playing', () => {
+      console.log('Audio started playing:', audioFile)
+    })
+    audio.addEventListener('error', (e) => {
+      console.error('Audio error:', e)
+    })
+    audio.addEventListener('ended', () => {
+      console.log('Audio finished playing:', audioFile)
+    })
+
+    audio.play()
+      .then(() => console.log('Audio play promise resolved'))
+      .catch(e => console.error('Error playing audio:', e, audioFile))
+    
+    currentAudioRef.current = audio
+    lastPredRef.current = prediction
+  }
+
+  // Mapping function to convert prediction numbers to feedback messages
+  const getCoachWords = (prediction) => {
+    const messages = {
+      0: 'Nice work! Your stance and movement look solid—keep that same control and depth. Great form, keep it up!',
+      1: 'Your feet are a bit too wide—try bringing them in closer to about shoulder-width. That’ll give you better balance and let you drive more power through your legs.',
+      2: 'Bring your feet a bit wider apart—right now they’re too close, which limits balance and depth. A shoulder-width stance will give you more stability and let your hips move naturally through the squat.',
+      3: 'Watch your knees—they’re caving in (knee valgus). Focus on pushing them outward in line with your toes to keep your joints safe and maintain proper squat mechanics.',
+      4: 'You’re not squatting deep enough. Aim to lower until your thighs are at least parallel to the ground for full range of motion and better results.'
+    }
+    return messages[prediction] || 'Analyzing your form...'
+  }
+
+  // Mapping function to convert prediction numbers to feedback messages
+  const getErrorType = (prediction) => {
+    const messages = {
+      0: 'Correct',
+      1: 'Feet too wide',
+      2: 'Feet too close',
+      3: 'Knee too close',
+      4: 'Squat shallow'
+    }
+    return 'Coach Feedback: ' + (messages[prediction] || '')
+  }
+
   const frameCountRef = useRef(0)
   const lastFrameTimeRef = useRef(Date.now())
 
   const handleStart = async () => {
     try {
       console.log('Sending start request to backend...');
-      const response = await fetch('http://localhost:8000/start', {
+      const response = await fetch('http://172.26.203.22:8000/start', {
         method: 'POST',
       });
       
@@ -40,7 +133,7 @@ function App() {
 
     console.log('Setting up WebSocket connection...')
     // Use the current host for WebSocket connection
-    const ws = new WebSocket(`ws://localhost:8000/ws`)
+    const ws = new WebSocket(`ws://172.26.203.22:8000/ws`)
     
     ws.onopen = () => {
       console.log('WebSocket connection established')
@@ -67,12 +160,12 @@ function App() {
           } else {
             console.warn('Frame message missing image data')
           }
-        } else if (msg.type === 'suggestion') {
-          console.log('Received suggestion:', msg.message)
-          setSuggestion(msg.message)
         } else if (msg.type === 'counter') {
           console.log('Received counter update:', msg.count)
+          console.log('Received prediction update:', msg.prediction)
           setCounter(msg.count)
+          setPred(msg.prediction)
+          playAudio(msg.prediction)
         }
       } catch (e) {
         console.error('Error processing message:', e)
@@ -101,6 +194,11 @@ function App() {
     return () => {
       clearInterval(keepAlive)
       ws.close()
+      // Clean up audio
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause()
+        currentAudioRef.current = null
+      }
     }
   }, [isStarted])
 
@@ -193,7 +291,7 @@ function App() {
                       boxShadow: '0 0 8px #00FF95',
                       animation: 'pulse 1.5s infinite'
                     }}/>
-                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Coach Feedback</h2>
+                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{getErrorType(pred)}</h2>
                   </div>
                   <p style={{ 
                     margin: 0, 
@@ -201,7 +299,7 @@ function App() {
                     fontSize: '1.1rem',
                     lineHeight: 1.5
                   }}>
-                    {suggestion || 'Analyzing your form...'}
+                    {getCoachWords(pred)}
                   </p>
                 </div>                
               </div>

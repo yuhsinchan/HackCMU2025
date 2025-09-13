@@ -30,6 +30,7 @@ active_connections: List[WebSocket] = []
 
 # Store global counter
 exercise_counter: int = 0
+prediction: int = 0
 
 COACH_SUGGESTION = "Keep your back straight and maintain good form!"
 
@@ -37,7 +38,8 @@ async def broadcast_counter():
     """Send current counter value to all clients"""
     counter_data = {
         'type': 'counter',
-        'count': exercise_counter
+        'count': exercise_counter,
+        'prediction': prediction
     }
     await broadcast_frame(counter_data)
 
@@ -62,6 +64,7 @@ async def broadcast_frame(frame_data: Dict[str, Any]):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     global exercise_counter  # Declare global at the start of the function
+    global prediction
     print("New client connecting...")
     try:
         await websocket.accept()
@@ -84,6 +87,7 @@ async def websocket_endpoint(websocket: WebSocket):
             if len(active_connections) == 0:
                 print("All clients disconnected, reset counter to 0")
                 exercise_counter = 0
+                prediction = 0
             print(f"Active connections after disconnect: {len(active_connections)}")
     except Exception as e:
         print(f"WebSocket error: {e}")
@@ -93,10 +97,12 @@ async def websocket_endpoint(websocket: WebSocket):
             if len(active_connections) == 0:
                 print("All clients disconnected, reset counter to 0")
                 exercise_counter = 0
+                prediction = 0
 
 async def webcam_feed():
     """Capture and broadcast frames from webcam"""
     global exercise_counter  # Declare global at the start of the function
+    global prediction
     print("Initializing webcam feed...")
     cap = cv2.VideoCapture(0)
     
@@ -144,8 +150,9 @@ async def webcam_feed():
             # Every 3 seconds (90 frames at 30 FPS), increment and broadcast the counter
             if frame_count % 90 == 0:
                 exercise_counter += 1
-                await broadcast_counter()
-            
+                prediction = (prediction + 1) % 7  # Cycle through predictions 0-6
+            await broadcast_counter()
+
             if frame_count % 30 == 0:  # Log every 30 frames
                 print(f"Sent {frame_count} frames, current active connections: {len(active_connections)}")
             
@@ -298,7 +305,6 @@ async def start_video_feed():
     try:
         if not video_tasks.get('feed'):
             if args.mode == 'zed':
-                # TODO: Implement frame processing
                 print("Starting in ZED camera mode")
                 video_tasks['feed'] = asyncio.create_task(zed_feed())
             else:
