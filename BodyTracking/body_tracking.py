@@ -79,7 +79,7 @@ def main(opt):
     init_params = sl.InitParameters()
     init_params.camera_resolution = sl.RESOLUTION.HD1080  # Use HD1080 video mode
     init_params.coordinate_units = sl.UNIT.METER          # Set coordinate units
-    init_params.depth_mode = sl.DEPTH_MODE.ULTRA
+    init_params.depth_mode = sl.DEPTH_MODE.NEURAL_LIGHT
     init_params.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
 
     if opt.input_svo_file != '':

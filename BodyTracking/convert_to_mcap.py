@@ -119,6 +119,8 @@ def main():
     ts = data["data"][start_idx]["timestamp"]
 
     while ts - data["data"][start_idx]["timestamp"] < 1:
+        if start_idx * -1 == len(data["data"]):
+            break
         ts = data["data"][start_idx]["timestamp"]
         start_idx -= 1
 
@@ -161,6 +163,8 @@ def main():
                             "data": sq,
                         }
                     )
+
+                    sq = []
                     print(f"Count: {count} at frame {i - start_idx}")
                 l += 1
 
